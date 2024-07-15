@@ -1,6 +1,6 @@
-
+# Lab 1 : Filling Any Polygon - graficas por computadora
+# Autor: Angela Garcia, 22869
 #librerias:
-import re
 import pygame
 from pygame.locals import *
 from gl import Render
@@ -27,35 +27,45 @@ poligono4= [
     (552, 214), (517, 144) ,(466, 180)]
 poligono5=[(682, 175), (708, 120), (735, 148), (739, 170)]
 
-"""
-- ordenar los puntos de los poligonos
-- encontrar las lineas de escaneo
-- rellenar las lineasde escaneo
-- casos especiales
-"""
+# Metodo usado: relleno mediante trazado de bordes con colas (queue-based boundaryfill)
+# consiste en usar una cola para almacenar los pixeles que se deben rellenar
+# y una lista de pixeles visitados para no volver a visitarlos
+# se empieza en un punto y se verifica si el pixel esta dentro del poligono
+# si esta dentro se pinta y se agregan los pixeles adyacentes a la cola
+# se repite el proceso hasta que la cola este vacia
+# escogí este metodo porque es el mas eficiente para rellenar poligonos y se miraba corto el pseudocodigo xd
 
-def drawPoligono(listaPuntos):
-    for i in range(len(listaPuntos)):
-        puntoActual = listaPuntos[i]
-        puntoSiguiente =listaPuntos[(i+1) %len(listaPuntos)]
-        rend.glLine(puntoActual, puntoSiguiente)
-        xInicio, yInicio= puntoActual ##xFinal, yFinal = puntoSiguiente
-        rend.glPoint(xInicio, yInicio)     
-        lineasDeEscaneo = lineaDeEscaneo(puntoActual, puntoSiguiente)        
-
-#encontrar las lineas de escaneo (scanlines)
-def lineaDeEscaneo(puntoActual, puntoSiguiente):
-    lineaDeEscaneo = set()
-    #coordnadas minimas y maximas
-    yMin = min(puntoActual[1], puntoSiguiente[1])
-    yMax= max(puntoActual[1], puntoSiguiente[1])
+def verificacionPixelDentroDelPoligono(x, y):
+    #x, y = punto
+    n = len(poligono)
+    inside = False
     
-    #agregar las lineas de escaneo ntre las coordenadas minimas y maximas
-    for y in range(yMin, yMax +1):
-        lineaDeEscaneo.add(y)    
-    return sorted(lineaDeEscaneo)
+    for i in range(n):
+        x1, y1 = poligono[i] #actual
+        x2, y2 = poligono[(i + 1) % n] #siguiente
+        
+        if (y1 < y and y2 >= y) or (y2 < y and y1>=y):
+            if x1 + (y - y1)/(y2 - y1)*(x2 - x1) < x:
+                inside = not inside
+    return inside
 
-
+def fill(x,y, fillcolor, borderColor):
+    queue = [(x,y)] #inicializar la cola
+    visited = set()#inicializar el conjunto de visitados// 
+    while queue:
+        x,y = queue.pop(0)
+        if (x,y) not in visited: 
+            
+            visited.add((x,y))
+            for dx, dy in [(1,0), (-1,0), (0,1), (0,-1)]: #verificar los pixeles adyacentes //en esta parte use github copilot, no hay conversación porque lo trae integrado
+                
+                nx, ny = x + dx, y + dy
+                if (nx, ny) not in visited: 
+                    
+                    if verificacionPixelDentroDelPoligono(nx, ny):
+                        queue.append((nx, ny))
+                        rend.glPoint(nx, ny, (1, 0, 0.5) )
+    
 isRunning = True
 while isRunning:
 
@@ -83,11 +93,11 @@ while isRunning:
     
     poligonos= [poligono1, poligono2, poligono3, poligono4, poligono5]
     for poligono in poligonos:
-        #ordenar los puntos de los poligonos
-        #poligono.sort(key= lambda punto: punto[1])
-        #llamar a la funcion de poligonos para que los dibuje
-        drawPoligono(poligono)
-        
+        #jalar los puntos iniciles de cada poligono
+        x,y = poligono[0]
+        fill(x,y, fillcolor= None, borderColor=None)    
+    #punto = (200, 200)
+    #print(verificacionPixelDentroDelPoligono(punto, poligono1))
     pygame.display.flip()
     clock.tick(60)
 
